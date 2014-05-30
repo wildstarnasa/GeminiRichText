@@ -1,9 +1,33 @@
------------------------------------------------------------------------------------------------
---			GeminiMarkup
--- 			Apollo Package for adding Rich Text editing to an addon simply.
---			(c) Wildstar NASA 2014
------------------------------------------------------------------------------------------------
- 
+﻿--================================================================================================
+--
+--										GeminiMarkup
+-- 				Apollo Package for adding Rich Text editing to an addon simply.
+--								
+--================================================================================================
+ --[[
+The MIT License (MIT)
+
+Copyright (c) 2014 Wildstar NASA
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+]]
+
 require "Window"
  
  local MAJOR, MINOR = "GeminiMarkup", 1
@@ -13,7 +37,7 @@ if APkg and (APkg.nVersion or 0) >= MINOR then
 	return
 end
 
-local GeminiMarkup = APkg or {}
+local GeminiMarkup = APkg and APkg.tPackage or {}
 
 function GeminiMarkup:new(o)
     o = o or {}
@@ -34,7 +58,7 @@ end
  
 function GeminiMarkup:OnLoad()
     -- load our form file
-	self.xmlDoc = XmlDoc.CreateFromFile("GeminiMarkup.xml")
+	self.xmlDoc = XmlDoc.CreateFromFile("GeminiMarkup\\GeminiMarkup.xml")
 end
 
 function GeminiMarkup:CreateMarkupEditControl(wndHost, strSkin, tProperties, tAddon)
@@ -51,6 +75,8 @@ function GeminiMarkup:CreateMarkupEditControl(wndHost, strSkin, tProperties, tAd
 			nCharacterLimit = 2500,
 		}
 	]]
+	-- tAddon = addon that contains the methods.
+	
 	if wndHost == nil then Print("You must supply a valid window for argument #1."); return end
 	
 	local fLeftAnchor, fTopAnchor, fRightAnchor, fBottomAnchor = wndHost:GetAnchorPoints()
@@ -139,13 +165,15 @@ function GeminiMarkup:GetText(wndMarkup)
 end
 
 function GeminiMarkup:ParseMarkup(strText, tMarkupStyles)
+	-- strText = the text to be parsed
+	-- tMarkupStyles = 
 	--[[
 		tMarkupStyles = {
 			{tag = "h1", font = "CRB_Interface14_BBO", color = "UI_TextHoloTitle", align = "Center"},
 			{tag = "h2", font = "CRB_Interface12_BO", color = "UI_TextHoloTitle", align = "Left"},
 			{tag = "h3", font = "CRB_Interface12_I", color = "UI_TextHoloBodyHighlight", align = "Left"},
 			{tag = "p", font = "CRB_Interface12", color = "UI_TextHoloBodyHighlight", align = "Left"},
-			{tag = "li", font = "CRB_Interface12", color = "UI_TextHoloBodyHighlight", align = "Left"},
+			{tag = "li", font = "CRB_Interface12", color = "UI_TextHoloBodyHighlight", align = "Left", bullet = "●", indent = "  "},
 		},
 	]]
 	strText = string.gsub(strText, "\n", "<BR />")
@@ -155,12 +183,14 @@ function GeminiMarkup:ParseMarkup(strText, tMarkupStyles)
 		local strSubTagOpen= [[<P Font="]]..v.font..[[" Align="]]..v.align..[[" TextColor="]]..v.color..[[">]]
 		local strSubTagClose = "</P>"
 
-		if v.tag == "li" then
-			strSubTagOpen= strSubTagOpen..[[  ●  ]]
+		if v.bullet ~= nil then
+			strSubTagOpen= strSubTagOpen..(v.indent or "")..v.bullet.." "
 		end
+		
 		if string.find(strText, strOpenTag) then
 			strText = string.gsub(strText, strOpenTag, strSubTagOpen)
 		end
+		
 		if string.find(strText, strCloseTag) then
 			
 			strText = string.gsub(strText, strCloseTag, strSubTagClose)
