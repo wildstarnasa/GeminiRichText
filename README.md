@@ -13,6 +13,7 @@ GeminiMarkup = Apollo.GetPackage("GeminiMarkup").tPackage
 - wndHost = Place holder window, used to get Window Name, Anchors and Offsets, and Parent
 - strSkin = "Holo" or "Metal" -- not case sensitive
 - tProperties = table with special properties to be set, such as font face and color, or event methods
+```lua
   tProperties = {
     tEvents = {
       EditBoxChanged = "OnTextChanged",
@@ -21,6 +22,7 @@ GeminiMarkup = Apollo.GetPackage("GeminiMarkup").tPackage
     strTextColor = "ffffffff",
     nCharacterLimit = 2500,
     }
+```
 - tAddon = The addon that contains the methods defined in tProperties.
 - Returns wndMarkup, a reference to the new markup window.
 
@@ -35,6 +37,7 @@ GeminiMarkup = Apollo.GetPackage("GeminiMarkup").tPackage
 ## GeminiMarkup:ParseMarkup(strText, tMarkupStyles) ##
 - strText = The text to be set.
 - tMarkupStyles = a table containing formatting for the markup styles.
+```lua
   tMarkupStyles = {
     {tag = "h1", font = "CRB_Interface14_BBO", color = "UI_TextHoloTitle", align = "Center"},
     {tag = "h2", font = "CRB_Interface12_BO", color = "UI_TextHoloTitle", align = "Left"},
@@ -42,4 +45,5 @@ GeminiMarkup = Apollo.GetPackage("GeminiMarkup").tPackage
     {tag = "p", font = "CRB_Interface12", color = "UI_TextHoloBodyHighlight", align = "Left"},
     {tag = "li", font = "CRB_Interface12", color = "UI_TextHoloBodyHighlight", align = "Left"},
   },
+```
 - Returns strParsedText, The parsed text, formatted in XML markup.
