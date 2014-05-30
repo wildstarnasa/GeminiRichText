@@ -167,15 +167,17 @@ end
 function GeminiMarkup:ParseMarkup(strText, tMarkupStyles)
 	-- strText = the text to be parsed
 	-- tMarkupStyles = 
-	--[[
+	
+	if tMarkupStyles == nil then
 		tMarkupStyles = {
-			{tag = "h1", font = "CRB_Interface14_BBO", color = "UI_TextHoloTitle", align = "Center"},
-			{tag = "h2", font = "CRB_Interface12_BO", color = "UI_TextHoloTitle", align = "Left"},
-			{tag = "h3", font = "CRB_Interface12_I", color = "UI_TextHoloBodyHighlight", align = "Left"},
-			{tag = "p", font = "CRB_Interface12", color = "UI_TextHoloBodyHighlight", align = "Left"},
-			{tag = "li", font = "CRB_Interface12", color = "UI_TextHoloBodyHighlight", align = "Left", bullet = "●", indent = "  "},
+			{tag = "h1", font = "CRB_Interface14_BBO", color = "ffffffff", align = "Center"},
+			{tag = "h2", font = "CRB_Interface12_BO", color = "ffffffff", align = "Left"},
+			{tag = "h3", font = "CRB_Interface12_I", color = "ffffffff", align = "Left"},
+			{tag = "p", font = "CRB_Interface12", color = "ffaaaaaa", align = "Left"},
+			{tag = "li", font = "CRB_Interface12", color = "ffaaaaaa", align = "Left", bullet = "●", indent = "  "},
 		},
-	]]
+	end
+	
 	strText = string.gsub(strText, "\n", "<BR />")
 	for i, v in pairs(tMarkupStyles) do
 		local strOpenTag = "\{"..v.tag.."\}"
