@@ -43,7 +43,7 @@ GeminiMarkup = Apollo.GetPackage("GeminiMarkup").tPackage
     {tag = "h2", font = "CRB_Interface12_BO", color = "UI_TextHoloTitle", align = "Left"},
     {tag = "h3", font = "CRB_Interface12_I", color = "UI_TextHoloBodyHighlight", align = "Left"},
     {tag = "p", font = "CRB_Interface12", color = "UI_TextHoloBodyHighlight", align = "Left"},
-    {tag = "li", font = "CRB_Interface12", color = "UI_TextHoloBodyHighlight", align = "Left"},
+    {tag = "li", font = "CRB_Interface12", color = "UI_TextHoloBodyHighlight", align = "Left", bullet = "●", indent = "  "},
   },
 ```
 - Returns strParsedText, The parsed text, formatted in XML markup.
