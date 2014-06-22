@@ -1,6 +1,6 @@
 ﻿--================================================================================================
 --
---										GeminiMarkup
+--										GeminiRichText
 -- 				Apollo Package for adding Rich Text editing to an addon simply.
 --								
 --================================================================================================
@@ -30,16 +30,16 @@ THE SOFTWARE.
 
 require "Window"
  
- local MAJOR, MINOR = "GeminiMarkup", 1
+ local MAJOR, MINOR = "GeminiRichText", 1
 local APkg = Apollo.GetPackage(MAJOR)
 
 if APkg and (APkg.nVersion or 0) >= MINOR then
 	return
 end
 
-local GeminiMarkup = APkg and APkg.tPackage or {}
+local GeminiRichText = APkg and APkg.tPackage or {}
 
-function GeminiMarkup:new(o)
+function GeminiRichText:new(o)
     o = o or {}
     setmetatable(o, self)
     self.__index = self 
@@ -49,19 +49,27 @@ function GeminiMarkup:new(o)
     return o
 end
 
-function GeminiMarkup:Init()
+function GeminiRichText:Init()
 	local tDependencies = {
 		-- "UnitOrPackageName",
 	}
-    Apollo.RegisterPackage(GeminiMarkup:new(), MAJOR, MINOR, tDependencies)
+    Apollo.RegisterPackage(GeminiRichText:new(), MAJOR, MINOR, tDependencies)
 end
  
-function GeminiMarkup:OnLoad()
-    -- load our form file
-	self.xmlDoc = XmlDoc.CreateFromFile("GeminiMarkup\\GeminiMarkup.xml")
+function GeminiRichText:OnLoad()
+	local strPrefix = Apollo.GetAssetFolder()
+	local tToc = XmlDoc.CreateFromFile("toc.xml"):ToTable()
+	for k,v in ipairs(tToc) do
+		local strPath = string.match(v.Name, "(.*)[\\/]GeminiRichText")
+		if strPath ~= nil and strPath ~= "" then
+			strPrefix = strPrefix .. "\\" .. strPath .. "\\"
+			break
+		end
+	end
+	self.xmlDoc = XmlDoc.CreateFromFile(strPrefix.."GeminiRichText.xml")
 end
 
-function GeminiMarkup:CreateMarkupEditControl(wndHost, strSkin, tProperties, tAddon)
+function GeminiRichText:CreateMarkupEditControl(wndHost, strSkin, tProperties, tAddon)
 	-- wndHost = place holder window, used to get Window Name, Anchors and Offsets, and Parent
 	-- strSkin = "Holo" or "Metal" -- not case sensitive
 	-- tProperties = table with special properties to be set, such as font face and color, or event methods
@@ -132,7 +140,7 @@ function GeminiMarkup:CreateMarkupEditControl(wndHost, strSkin, tProperties, tAd
 	return wndMarkup
 end
 
-function GeminiMarkup:OnEditHistoryBoxChanged( wndHandler, wndControl, strText )
+function GeminiRichText:OnEditHistoryBoxChanged( wndHandler, wndControl, strText )
 	local wndCounter = wndControl:GetParent():FindChild("wnd_CharacterCount")
 	if wndCounter:IsShown() ~= true then return end
 	local nCharacterLimit = wndCounter:GetData().nCharacterLimit
@@ -140,7 +148,7 @@ function GeminiMarkup:OnEditHistoryBoxChanged( wndHandler, wndControl, strText )
 	wndCounter:SetText(tostring(nCharacterLimit - nCharacterCount))
 end
 
-function GeminiMarkup:InsertTag(wndHandler, wndControl)
+function GeminiRichText:InsertTag(wndHandler, wndControl)
 	local wndEditBox = wndControl:GetParent():FindChild("input_s_Text")
 	local tagType = string.sub(wndControl:GetName(), 5)
 	local tSelected = wndEditBox:GetSel()
@@ -155,16 +163,16 @@ function GeminiMarkup:InsertTag(wndHandler, wndControl)
 	
 end
 
-function GeminiMarkup:SetText(wndMarkup, strText)
+function GeminiRichText:SetText(wndMarkup, strText)
 	wndMarkup:FindChild("input_s_Text"):SetText(strText)
 end
 
-function GeminiMarkup:GetText(wndMarkup)
+function GeminiRichText:GetText(wndMarkup)
 	local strText = wndMarkup:FindChild("input_s_Text"):GetText()
 	return strText
 end
 
-function GeminiMarkup:ParseMarkup(strText, tMarkupStyles)
+function GeminiRichText:ParseMarkup(strText, tMarkupStyles)
 	-- strText = the text to be parsed
 	-- tMarkupStyles = 
 	
@@ -215,4 +223,4 @@ function GeminiMarkup:ParseMarkup(strText, tMarkupStyles)
 	return strText
 end
 
-GeminiMarkup:Init()
+GeminiRichText:Init()
