@@ -33,8 +33,32 @@ THE SOFTWARE.
 
 require "Window"
 -----------------------------------------------------------------------------------------------
--- GeminiRichText Local Functions
+-- GeminiRichText Module Definition
 -----------------------------------------------------------------------------------------------
+
+local MAJOR, MINOR = "GeminiRichText", 1
+-- Get a reference to the package information if any
+local APkg = Apollo.GetPackage(MAJOR)
+-- If there was an older version loaded we need to see if this is newer
+if APkg and (APkg.nVersion or 0) >= MINOR then
+	return -- no upgrade needed
+end
+
+local GeminiRichText = APkg and APkg.tPackage or {}
+local GeminiColor
+
+-----------------------------------------------------------------------------------------------
+-- GeminiRichText Local Functions and Constants
+-----------------------------------------------------------------------------------------------
+
+local ktMarkupStyles = {
+	{tag = "h1", font = "CRB_Interface14_BBO", color = "ffffffff", align = "Center"},
+	{tag = "h2", font = "CRB_Interface12_BO", color = "ffffffff", align = "Left"},
+	{tag = "h3", font = "CRB_Interface12_I", color = "ffffffff", align = "Left"},
+	{tag = "p", font = "CRB_Interface12", color = "ffaaaaaa", align = "Left"},
+	{tag = "li", font = "CRB_Interface12", color = "ffaaaaaa", align = "Left", bullet = "●", indent = "  "},
+	{tag = "alien", font = "CRB_AlienMedium", color = "ffaaaaaa", align = "Left"},
+}
 
 local function SetDDSelectByName(self, wndButton, strName)
 	local tButtonList = wndButton:FindChild("ddList"):GetChildren()
@@ -58,19 +82,18 @@ local function UpdateSampleText(wndStyleEditor)
 	
 	wndSample:SetAML(xmlStyleDoc)	
 end
------------------------------------------------------------------------------------------------
--- GeminiRichText Module Definition
------------------------------------------------------------------------------------------------
 
-local MAJOR, MINOR = "GeminiRichText", 1
--- Get a reference to the package information if any
-local APkg = Apollo.GetPackage(MAJOR)
--- If there was an older version loaded we need to see if this is newer
-if APkg and (APkg.nVersion or 0) >= MINOR then
-	return -- no upgrade needed
+local function CreateDefaultStyleTable(t)
+	if type(t) ~= "table" then
+		t = {}
+	end
+	
+	for i,v in pairs(ktMarkupStyles) do
+		table.insert(t,v)
+	end
+	
+	return t
 end
-
-local GeminiRichText = APkg and APkg.tPackage or {}
 
 -----------------------------------------------------------------------------------------------
 -- GeminiRichText OnLoad and Instancing
@@ -87,6 +110,7 @@ function GeminiRichText:OnLoad()
 		end
 	end
 	self.xmlDoc = XmlDoc.CreateFromFile(strPrefix.."GeminiRichText.xml")
+	GeminiColor = Apollo.GetPackage("GeminiColor").tPackage
 end
 
 function GeminiRichText:new(o)
@@ -94,6 +118,14 @@ function GeminiRichText:new(o)
 	setmetatable(o, self)
 	self.__index = self 
 	return o
+end
+
+function GeminiRichText:OnDependencyError(strDep, strError)
+	if strDep == "GeminiColor" then
+		return true
+	else
+		return false
+	end
 end
 
 -----------------------------------------------------------------------------------------------
@@ -108,7 +140,7 @@ function GeminiRichText:OnEditHistoryBoxChanged( wndHandler, wndControl, strText
 end
 
 function GeminiRichText:InsertTag(wndHandler, wndControl)
-	local wndEditBox = wndControl:GetParent():FindChild("input_s_Text")
+	local wndEditBox = wndControl:GetParent():GetParent():FindChild("input_s_Text") -- Button > Button Container > Main Window
 	local tagType = string.sub(wndControl:GetName(), 5)
 	local tSelected = wndEditBox:GetSel()
 	
@@ -121,7 +153,16 @@ function GeminiRichText:InsertTag(wndHandler, wndControl)
 		wndEditBox:InsertText(string.format("\{%s\}\{/%s\}",tagType, tagType))
 		wndEditBox:SetSel(string.len(wndEditBox:GetText()) - (string.len(tagType) + 3), string.len(wndEditBox:GetText()) - (string.len(tagType) + 3))
 	end
-	
+end
+
+function GeminiRichText:ColorSelect(strColor, wndButton)
+	wndButton:SetData(strColor)
+	wndButton:FindChild("swatch"):SetBGColor(strColor)
+	UpdateSampleText(wndButton:GetParent())
+end
+
+function GeminiRichText:ColorButtonClick(wndHandler, wndControl)
+	GeminiColor:ShowColorPicker(GeminiRichText, "ColorSelect", true, wndControl:GetData(), wndControl)
 end
 
 function GeminiRichText:DDClick(wndHandler, wndControl)
@@ -198,7 +239,7 @@ function GeminiRichText:GetText(wndMarkup)
 	return strText
 end
 
-function GeminiRichText:CreateMarkupEditControl(wndHost, strSkin, tProperties, tAddon)
+function GeminiRichText:CreateMarkupEditControl(wndHost, strSkin, tMarkupStyles, tProperties, tAddon)
 	-- wndHost = place holder window, used to get Window Name, Anchors and Offsets, and Parent
 	-- strSkin = "Holo" or "Metal" -- not case sensitive
 	-- tProperties = table with special properties to be set, such as font face and color, or event methods
@@ -215,6 +256,11 @@ function GeminiRichText:CreateMarkupEditControl(wndHost, strSkin, tProperties, t
 	-- tAddon = addon that contains the methods.
 	
 	if wndHost == nil then Print("You must supply a valid window for argument #1."); return end
+	
+	if tMarkupStyles == nil then
+		tMarkupStyles = {}
+		CreateDefaultStyleTable(tMarkupStyles)
+	end
 	
 	local fLeftAnchor, fTopAnchor, fRightAnchor, fBottomAnchor = wndHost:GetAnchorPoints()
 	local fLeftOffset, fTopOffset, fRightOffset, fBottomOffset = wndHost:GetAnchorOffsets()
@@ -239,6 +285,12 @@ function GeminiRichText:CreateMarkupEditControl(wndHost, strSkin, tProperties, t
 	wndMarkup:FindChild("wnd_CharacterCount"):Show(false)
 	
 	if tProperties ~= nil then
+		if tProperties.tTagList then
+			-- "CRB_Basekit:kitBtn_ListHeader_Top"
+			-- "CRB_Basekit:kitBtn_Holo"
+			
+		end
+		
 		if tProperties.tEvents then
 			for event,handler in pairs(tProperties.tEvents) do
 				wndMarkup:FindChild("input_s_Text"):AddEventHandler(event,handler,tAddon)
@@ -270,18 +322,13 @@ function GeminiRichText:CreateMarkupEditControl(wndHost, strSkin, tProperties, t
 end
 
 -- Style Edit
-function GeminiRichText:CreateMarkupStyleEditor(wndHost, tStyleData)
+function GeminiRichText:CreateMarkupStyleEditor(wndHost, tMarkupStyles)
 	-- wndHost = place holder window, used to get Window Name, Anchors and Offsets, and Parent
 	if wndHost == nil then Print("You must supply a valid window for argument #1."); return end
 	
-	if tStyleData == nil then
-		tStyleData = {
-			{tag = "h1", font = "CRB_Interface14_BBO", color = "ffffffff", align = "Center"},
-			{tag = "h2", font = "CRB_Interface12_BO", color = "ffffffff", align = "Left"},
-			{tag = "h3", font = "CRB_Interface12_I", color = "ffffffff", align = "Left"},
-			{tag = "p", font = "CRB_Interface12", color = "ffaaaaaa", align = "Left"},
-			{tag = "li", font = "CRB_Interface12", color = "ffaaaaaa", align = "Left", bullet = "●", indent = "  "},
-		}
+	if tMarkupStyles == nil then
+		tMarkupStyles = {}
+		CreateDefaultStyleTable(tMarkupStyles)
 	end
 
 	local fLeftAnchor, fTopAnchor, fRightAnchor, fBottomAnchor = wndHost:GetAnchorPoints()
@@ -291,9 +338,13 @@ function GeminiRichText:CreateMarkupStyleEditor(wndHost, tStyleData)
 	local wndStyles
 
 	wndHost:Destroy()
-
+	
 	wndStyles = Apollo.LoadForm(self.xmlDoc, "StyleEditorForm", wndParent, self)
 	local btnFontDD = wndStyles:FindChild("btn_DDFont")
+	
+	if not GeminiColor then
+		wndStyles:FindChild("wnd_StyleOptionsEditor:btn_Color"):RemoveEventHandler("ButtonSignal")
+	end
 	
 	local wndDDList = btnFontDD:FindChild("ddList")
 	local tGameFontList = Apollo.GetGameFonts()
@@ -303,6 +354,8 @@ function GeminiRichText:CreateMarkupStyleEditor(wndHost, tStyleData)
 		if string.find(v.name, "CRB_Interface%d?%d") then
 			table.insert(tFontList, v.name)
 		elseif string.find(v.name, "CRB_Header%d?%d") then
+			table.insert(tFontList, v.name)
+		elseif string.find(v.name, "CRB_Alien") then
 			table.insert(tFontList, v.name)
 		end
 	end		
@@ -346,7 +399,7 @@ function GeminiRichText:CreateMarkupStyleEditor(wndHost, tStyleData)
 	wndStyles:SetAnchorPoints(fLeftAnchor, fTopAnchor, fRightAnchor, fBottomAnchor)
 	wndStyles:SetAnchorOffsets(fLeftOffset, fTopOffset, fRightOffset, fBottomOffset)
 	wndStyles:SetName(strName)
-	for i,v in pairs(tStyleData) do
+	for i,v in pairs(tMarkupStyles) do
 		local iCurrRow = wndStyles:AddRow("")
 		wndStyles:SetCellLuaData(iCurrRow, 1, v)
 		local xmlStyleDoc = string.format("<P Font=%q Align=%q TextColor=%q>Style: %s</P>", v.font, v.align,  v.color, v.tag)
@@ -387,13 +440,8 @@ function GeminiRichText:ParseMarkup(strText, tMarkupStyles)
 	strText = FixXMLString(strText)
 	
 	if tMarkupStyles == nil then
-		tMarkupStyles = {
-			{tag = "h1", font = "CRB_Interface14_BBO", color = "ffffffff", align = "Center"},
-			{tag = "h2", font = "CRB_Interface12_BO", color = "ffffffff", align = "Left"},
-			{tag = "h3", font = "CRB_Interface12_I", color = "ffffffff", align = "Left"},
-			{tag = "p", font = "CRB_Interface12", color = "ffaaaaaa", align = "Left"},
-			{tag = "li", font = "CRB_Interface12", color = "ffaaaaaa", align = "Left", bullet = "●", indent = "  "},
-		}
+		tMarkupStyles = {}
+		CreateDefaultStyleTable(tMarkupStyles)
 	end
 	
 	local tP
@@ -407,6 +455,8 @@ function GeminiRichText:ParseMarkup(strText, tMarkupStyles)
 	local tPtag -- to save the main text tag for later
 	strText = string.gsub(strText, "\n\n", string.format("<P Font=%q TextColor=\"00ffffff\">BlankLine</P>", tP.font))
 	strText = string.gsub(strText, "{hr}", string.format("<P Font=%q TextColor=%q Align=%q>――――――――――――――――――――</P>", tP.font, tP.color, "Center"))
+	strText = string.gsub(strText, "{img}", "<T Align=\"Center\" Image=\"")
+	strText = string.gsub(strText, "{/img}", "\"></T>")
 	for i, v in pairs(tMarkupStyles) do
 		local strOpenTag = string.format("{%s}",v.tag)
 		local strCloseTag = string.format("{/%s}",v.tag)
@@ -457,4 +507,4 @@ end
 -----------------------------------------------------------------------------------------------
 -- GeminiRichText Registration
 -----------------------------------------------------------------------------------------------
-Apollo.RegisterPackage(GeminiRichText:new(), MAJOR, MINOR, {})
+Apollo.RegisterPackage(GeminiRichText:new(), MAJOR, MINOR, {"GeminiColor"})
