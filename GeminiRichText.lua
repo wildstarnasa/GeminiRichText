@@ -109,8 +109,10 @@ function GeminiRichText:OnLoad()
 			break
 		end
 	end
+	
 	self.xmlDoc = XmlDoc.CreateFromFile(strPrefix.."GeminiRichText.xml")
 	GeminiColor = Apollo.GetPackage("GeminiColor").tPackage
+	self.arStrMacroIcons = MacrosLib.GetMacroIconList()
 end
 
 function GeminiRichText:new(o)
@@ -155,6 +157,30 @@ function GeminiRichText:InsertTag(wndHandler, wndControl)
 	end
 end
 
+function GeminiRichText:OnInsertImage(wndHandler, wndControl)
+	local wndIconList = wndControl:FindChild("wnd_SelectIcon")
+	wndIconList:Show(not wndIconList:IsShown())
+end
+
+function GeminiRichText:OnIconOK(wndHandler, wndControl)
+	Print("OK Clicked")
+	--OK button --> Icon Window --> Img button --> button container --> Main Window
+	local wndEditBox = wndControl:GetParent():GetParent():GetParent():GetParent():FindChild("input_s_Text")
+	local wndIconList = wndControl:GetParent():FindChild("IconList")
+	local btnSel = wndIconList:GetRadioSelButton()
+	local strSprite = btnSel:GetSprite()
+	wndEditBox:InsertText(string.format("\{img\}%s\{/img\}",strSprite))
+	wndIconList:SetRadioSelButton(nil)
+	wndControl:GetParent():Show(false)
+end
+
+function GeminiRichText:OnIconCancel(wndHandler, wndControl)
+	local wndIconList = wndControl:GetParent():FindChild("IconList")
+	wndIconList:SetRadioSelButton(nil)
+	wndControl:GetParent():Show(false)
+end
+
+-- Style Internal
 function GeminiRichText:ColorSelect(strColor, wndButton)
 	wndButton:SetData(strColor)
 	wndButton:FindChild("swatch"):SetBGColor(strColor)
@@ -226,6 +252,7 @@ function GeminiRichText:StyleEditorOK(wndHandler, wndControl)
 	
 	wndStyleOptions:Show(false,true)
 end
+
 -----------------------------------------------------------------------------------------------
 -- GeminiRichText External Methods
 -----------------------------------------------------------------------------------------------
@@ -318,6 +345,23 @@ function GeminiRichText:CreateMarkupEditControl(wndHost, strSkin, tMarkupStyles,
 		end
 	end
 	
+	wndMarkup:FindChild("wnd_ButtonBar:btn_img:wnd_SelectIcon"):Show(false)
+	local tFuncs = {
+		LoadIcons = function()
+			Print("Loading Icons")
+			local wndIconList = wndMarkup:FindChild("wnd_ButtonBar:btn_img:wnd_SelectIcon"):FindChild("IconList")
+			Print(wndIconList:GetName())
+			-- create the list of icons
+			for idx = 1, #self.arStrMacroIcons do
+				 local wndIcon = Apollo.LoadForm(self.xmlDoc, "IconItem", wndIconList, self)
+				 wndIcon:SetSprite(self.arStrMacroIcons[idx])
+			end
+			wndIconList:ArrangeChildrenTiles()
+		end
+	}
+	if #self.arStrMacroIcons <= 0 then
+	local IconTimer = ApolloTimer.Create(5, false, "LoadIcons", tFuncs)
+	
 	return wndMarkup
 end
 
@@ -341,7 +385,6 @@ function GeminiRichText:CreateMarkupStyleEditor(wndHost, tMarkupStyles)
 	
 	wndStyles = Apollo.LoadForm(self.xmlDoc, "StyleEditorForm", wndParent, self)
 	local btnFontDD = wndStyles:FindChild("btn_DDFont")
-	
 	if not GeminiColor then
 		wndStyles:FindChild("wnd_StyleOptionsEditor:btn_Color"):RemoveEventHandler("ButtonSignal")
 	end
