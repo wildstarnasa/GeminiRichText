@@ -334,33 +334,12 @@ function GeminiRichText:CreateMarkupEditControl(wndHost, strSkin, tMarkupStyles,
 		
 		if tProperties.nCharacterLimit then
 		
-			wndMarkup:FindChild("wnd_CharacterCount"):Show(false)
+			wndMarkup:FindChild("wnd_CharacterCount"):Show(true)
 			wndMarkup:FindChild("wnd_CharacterCount"):SetData({nCharacterLimit = tProperties.nCharacterLimit})
 			wndMarkup:FindChild("wnd_CharacterCount"):SetText(tProperties.nCharacterLimit)
-			local tPixie = wndMarkup:FindChild("wnd_CharacterCount"):GetPixieInfo(1)
-			tPixie.strText = tostring(tProperties.nCharacterLimit)
-			wndMarkup:FindChild("wnd_CharacterCount"):UpdatePixie(1, tPixie)
-			
 			wndMarkup:FindChild("input_s_Text"):SetMaxTextLength(tProperties.nCharacterLimit)
 		end
 	end
-	
-	wndMarkup:FindChild("wnd_ButtonBar:btn_img:wnd_SelectIcon"):Show(false)
-	local tFuncs = {
-		LoadIcons = function()
-			Print("Loading Icons")
-			local wndIconList = wndMarkup:FindChild("wnd_ButtonBar:btn_img:wnd_SelectIcon"):FindChild("IconList")
-			Print(wndIconList:GetName())
-			-- create the list of icons
-			for idx = 1, #self.arStrMacroIcons do
-				 local wndIcon = Apollo.LoadForm(self.xmlDoc, "IconItem", wndIconList, self)
-				 wndIcon:SetSprite(self.arStrMacroIcons[idx])
-			end
-			wndIconList:ArrangeChildrenTiles()
-		end
-	}
-	if #self.arStrMacroIcons <= 0 then
-	local IconTimer = ApolloTimer.Create(5, false, "LoadIcons", tFuncs)
 	
 	return wndMarkup
 end
